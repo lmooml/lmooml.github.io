@@ -2033,22 +2033,22 @@ footer {
   content: "\f142";
 }
 .copyright {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   font-family: "Helvetica Neue", "Helvetica", "Microsoft YaHei", "WenQuanYi Micro Hei", Arial, sans-serif;
-  font-size: 0.6em;
-}
-width 100% {
+  width: 100%;
   color: #fff;
   text-align: center;
 }
 @media only screen and (min-width: 768px) {
-  width 100% {
+  .copyright {
     float: left;
   }
 }
-width 100% a {
+.copyright a {
   color: #2ca6cb;
 }
-width 100% a:hover {
+.copyright a:hover {
   color: #2ca6cb;
   text-decoration: underline;
 }

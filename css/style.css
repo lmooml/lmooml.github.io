@@ -91,11 +91,11 @@ a img {
 }
 /* custom Font*/
 @font-face {
-  font-family: "covered_by_your_graceregular";
+  font-family: "FontAwesome";
   font-weight: normal;
   font-style: normal;
-  src: url("../font/coveredbyyourgrace-webfont.eot");
-  src: url("../font/coveredbyyourgrace-webfont.eot?#iefix") format('embedded-opentype'), url("../font/coveredbyyourgrace-webfont.svg#covered_by_your_graceregular") format('svg'), url("../font/coveredbyyourgrace-webfont.woff") format('woff'), url("../font/coveredbyyourgrace-webfont.ttf") format('truetype');
+  src: url("../font/fontawesome-webfont.eot");
+  src: url("../font/fontawesome-webfont.eot?#iefix") format('embedded-opentype'), url("../font/fontawesome-webfont.svg#FontAwesome") format('svg'), url("../font/fontawesome-webfont.woff") format('woff'), url("../font/fontawesome-webfont.ttf") format('truetype');
 }
 /* icon Font */
 @font-face {
@@ -2033,22 +2033,22 @@ footer {
   content: "\f142";
 }
 .copyright {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-family: "fontdiao";
-  width: 100%;
+  font-family: "Helvetica Neue", "Helvetica", "Microsoft YaHei", "WenQuanYi Micro Hei", Arial, sans-serif;
+  font-size: 0.6em;
+}
+width 100% {
   color: #fff;
   text-align: center;
 }
 @media only screen and (min-width: 768px) {
-  .copyright {
+  width 100% {
     float: left;
   }
 }
-.copyright a {
+width 100% a {
   color: #2ca6cb;
 }
-.copyright a:hover {
+width 100% a:hover {
   color: #2ca6cb;
   text-decoration: underline;
 }

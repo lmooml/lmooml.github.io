@@ -81,6 +81,71 @@
         <header class="article-info clearfix">
   <h1 itemprop="name">
     
+      <a href="/2015/09/20/Hexo的安装使用/" title="Hexo的安装使用" itemprop="url">Hexo的安装使用</a>
+  </h1>
+  <p class="article-author">By
+       
+		<a href="/about" title="Lell" target="_blank" itemprop="author">Lell</a>
+		
+  <p class="article-time">
+    <time datetime="2015-09-20T15:23:00.000Z" itemprop="datePublished"> 发表于 2015-09-20</time>
+    
+  </p>
+</header>
+    <div class="article-content">
+        
+        <p>上篇blog里链接了一个非常详细的教学贴<a href="http://cnfeat.com/blog/2014/05/10/how-to-build-a-blog/" target="_blank" rel="external">《如何搭建一个独立博客——简明Github Pages与Hexo教程》</a>,这个帖子非常细致的讲解了如何一步一步搭建自己的独立博客。但是在安装Hexo的时候，你可能会卡住，原因是万恶的GFW会成为你最大的障碍，当然Hexo的版本在更新，安装指令也有变化。</p>
+<h2 id="安装Hexo">安装Hexo</h2><p>因为Hexo的安装是利用Nodejs环境下的包管理程序npm来进行的，所以如果你直接按照说明敲下命令</p>
+<pre><code>$ npm <span class="operator"><span class="keyword">install</span> -<span class="keyword">g</span> hexo</span>
+</code></pre><p>很可能会一直卡住，没有反应，因为你无法连接远程服务器进行hexo的下载。所以首先要解决连接下载问题。</p>
+<p>国内的淘宝做了一个NPM镜像，每隔10分钟会和NPM仓库进行同步更新，所以你大可以用这个国内镜像进行Hexo的安装。首先下载安装cnpm</p>
+<pre><code>$ npm <span class="operator"><span class="keyword">install</span> -<span class="keyword">g</span> cnpm <span class="comment">--registry=https://registry.npm.taobao.org</span></span>
+</code></pre><p>完成之后，就可以进行Hexo的安装了，敲入如下指令</p>
+<pre><code>$ sudo cnpm npm <span class="operator"><span class="keyword">install</span> hexo-cli -<span class="keyword">g</span></span>
+</code></pre><p>然后输入你的管理员密码，就可以进行安装了。<br>也有可能会遇到安装出错，比如我。解决方法是，google一下出错信息，基本上都可以搜索出来解决方法。我的问题出现的原因目前还不知道，也没搜出所以然来，但是有解决方法，就是用如下指令进行安装</p>
+<pre><code>$ sudo cnpm <span class="operator"><span class="keyword">install</span> hexo <span class="comment">--no-optional</span></span>
+</code></pre><h2 id="修改你的Blog配置">修改你的Blog配置</h2><p>在<a href="http://cnfeat.com/blog/2014/05/10/how-to-build-a-blog/" target="_blank" rel="external">《如何搭建一个独立博客——简明Github Pages与Hexo教程》</a>帖子的后边，链接了几个非常有用的文章，你可以参考里面的建议来配置、修改自己的Blog主页。当然，这需要你具备一些Html5的基础知识。如果不闲折腾的话，在备份了你的themes文件后，可以进行修改的尝试，反正改坏了再复制回来就好。</p>
+
+        
+        
+        <p class="article-more-link">
+          
+       </p>
+    </div>
+    <footer class="article-footer clearfix">
+<div class="article-catetags">
+
+<div class="article-categories">
+  <span></span>
+  <a class="article-category-link" href="/categories/Geek范儿/">Geek范儿</a>
+</div>
+
+
+</div>
+
+
+
+
+<div class="comments-count">
+	
+</div>
+
+</footer>
+
+
+    </article>
+
+
+
+
+
+
+   
+    
+    <article class="post-expand post" itemprop="articleBody"> 
+        <header class="article-info clearfix">
+  <h1 itemprop="name">
+    
       <a href="/2015/09/19/hello-world/" title="Hello world!" itemprop="url">Hello world!</a>
   </h1>
   <p class="article-author">By
@@ -156,7 +221,7 @@
 		<ul>
 		
 		  
-			<li><a href="/categories/Geek范儿/" title="Geek范儿">Geek范儿<sup>1</sup></a></li>
+			<li><a href="/categories/Geek范儿/" title="Geek范儿">Geek范儿<sup>2</sup></a></li>
 		  
 		
 		</ul>

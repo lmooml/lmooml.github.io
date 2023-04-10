@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="Lell Blog">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://lmooml.github.io/img/home-banner.jpg">
+    <meta property="twitter:image" content="https://lmooml.github.io/img/home-banner.jpg" />
+    
+
+    
+    <meta name="title" content="Docker 搭建私有仓库（二）" />
+    <meta property="og:title" content="Docker 搭建私有仓库（二）" />
+    <meta property="twitter:title" content="Docker 搭建私有仓库（二）" />
+    
+
+    
+    <meta name="description" content="Lell，程序员, Gopher，自行车运动爱好者 | 这里是Lell的博客，have fun with code。">
+    <meta property="og:description" content="Lell，程序员, Gopher，自行车运动爱好者 | 这里是Lell的博客，have fun with code。" />
+    <meta property="twitter:description" content="Lell，程序员, Gopher，自行车运动爱好者 | 这里是Lell的博客，have fun with code。" />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="Lell,  Lell的网络日志, Lell的博客, Lell Blog, 博客, 个人网站, 云原生, Kubernetes, 微服务, Microservice">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Docker 搭建私有仓库（二） | Lell的博客 | Lell Blog</title>
+
+    <link rel="canonical" href="/post/docker-registry-2/">
+
+    
+    
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
+
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+
+    
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
+
+    
+    
+
+    
+    <script src="/js/jquery.min.js"></script>
+
+    
+    <script src="/js/bootstrap.min.js"></script>
+
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    <script src="/js/lazysizes.min.js"></script>
+
+    
+    
+
+</head>
+
+
+
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Lell Blog</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">All Posts</a>
+                    </li>
+                    
+                        
+                        <li>
+                            <a href="/categories/docker/">docker</a>
+                        </li>
+                        
+                    
+                    
+		    
+                        <li><a href="/archive//">ARCHIVE</a></li>
+                    
+                        <li><a href="/about//">ABOUT</a></li>
+                    
+		            <li>
+                        <a href="/search"><i class="fa fa-search"></i></a>
+		           </li>
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/img/home-banner.jpg')
+    }
+</style>
+
+<header class="intro-header" >
+
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/docker" title="Docker">
+                            Docker
+                        </a>
+                        
+                        <a class="tag" href="/tags/registry" title="registry">
+                            registry
+                        </a>
+                        
+                    </div>
+                    <h1>Docker 搭建私有仓库（二）</h1>
+                    <h2 class="subheading">带TLS的安全仓库的搭建方法</h2>
+                    <span class="meta">
+                        
+                            Posted by 
+                            
+                                    Lell Blog
+                             
+                            on 
+                            Monday, April 10, 2023
+                            
+                            
+                            
+                            
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <p>搭建带TLS的registry仓库，首先需要CA证书。这个证书可以购买，也可以使用<strong><strong>Let’s encrypt</strong></strong> 免费证书。如果个人使用的话，还是很推荐Let‘s encrypt签发的免费证书，获取方便，最重要的是免费获取的。</p>
+<h3 id="1-获取lets-encrypt证书">1. 获取Let‘s encrypt证书</h3>
+<p>首先，需要安装certbot客户端工具，certbot是Let‘s encrypt 发布的获取证书的工具。在Ubuntu下可以使用以下命令安装：</p>
+<pre tabindex="0"><code>sudo apt-get update
+sudo apt-get install certbot
+</code></pre><p>安装完成后，使用以下命令获取证书：</p>
+<pre tabindex="0"><code>sudo certbot certonly --standalone  -d example.com
+</code></pre><p>如果运行无误，则会在/etc/letsencrypt/live/example.com/文件夹下产生若干证书文件，其中搭建带TLS的registry仓库需要其中的fullchain.pem和privkey.pem这2个文件。</p>
+<p><strong>注意</strong>：</p>
+<ol>
+<li>需要将example.com替换为自己的域名。</li>
+<li>在执行该命令之前，需要确保域名的80端口没有被占用。例如Nignx，需要先停止Ningx服务，再执行命令获取证书</li>
+</ol>
+<h3 id="2-配置registry镜像仓库">2. 配置registry镜像仓库</h3>
+<p>首先在用户家目录下（本例为/home/lell/）建立docker目录，在其中建立仓库目录和ssl目录</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>mkdir docker
+</span></span><span style="display:flex;"><span><span style="color:#8be9fd;font-style:italic">cd</span> docker
+</span></span><span style="display:flex;"><span>mkdir registry
+</span></span><span style="display:flex;"><span>mkdir ssl
+</span></span></code></pre></div><p>进入docker/ssl目录，准备证书文件：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8be9fd;font-style:italic">cd</span> ssl 
+</span></span><span style="display:flex;"><span>sudo cp /etc/letsencrypt/live/example.com/fullchain.pem domain.crt
+</span></span><span style="display:flex;"><span>sudo cp /etc/letsencrypt/live/example.com/privkey.pem domin.key
+</span></span></code></pre></div><p>注意，需要将example.com替换为自己的域名。</p>
+<h3 id="3-运行registry镜像">3. 运行registry镜像</h3>
+<p>在上一步完成配置文件的修改后，就可以运行registry镜像了，使用以下命令：</p>
+<pre tabindex="0"><code>docker run -d -p 5000:5000 --restart=always --name registry \
+  -v /home/lell/docker/registry:/var/lib/registry \
+  -v /home/lell/docker/ssl:/certs \
+  -e REGISTRY_HTTP_HOST=https://example.com \
+  -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
+  -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
+  -e REGISTRY_STORAGE_DELETE_ENABLED=true \
+  registry:2
+</code></pre><p>该命令解释如下：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>-v /home/lell/docker/registry:/var/lib/registry 
+</span></span></code></pre></div><p>将/home/lell/docker/registry目录挂载到容器内/var/lib/registry目录上，这样容器内外“共享空间”，可以比较方便的查看、删除仓库内容。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>-v /home/lell/docker/ssl:/certs 
+</span></span></code></pre></div><p>将ssl证书文件的存储目录挂载到容器内的/certs中，registry启动时可以加载证书文件</p>
+<p>之后的4个环境变量的指定也一目了然，不做过多解释。</p>
+<h3 id="4-测试">4. 测试</h3>
+<p>可以使用curl命令测试registry是否使用TLS。<a href="http://xn--registryexample-q53x08wbvr58q3s8lff1d.com/">假设registry的域名为example.com</a>，那么可以使用以下命令：</p>
+<pre tabindex="0"><code>curl -k &lt;https://example.com:5000/v2/&gt;
+</code></pre><p>如果返回以下信息，则表示配置成功：</p>
+<pre tabindex="0"><code>{}
+</code></pre><p>同时也可以在其他机器上测试拉取镜像是否成功。</p>
+<p><strong>注意：</strong></p>
+<p>如果服务器之前搭建过非安全的registry, 需要将/etc/docker/daemon.json文件中的insecure-registries配置项删除或注释掉，并重启docker。</p>
+<p>尝试推送镜像到远程仓库：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker pull busybox:latest
+</span></span><span style="display:flex;"><span>docker tag busybox:latest example.com:5000/busybox:latest
+</span></span><span style="display:flex;"><span>docker push example.com:5000/busybox:latest
+</span></span></code></pre></div><p>此时，可以成功推送镜像到远程仓库中</p>
+<h3 id="5-去掉端口号">5. 去掉端口号</h3>
+<p>如果觉得5000端口号比较碍眼，每次打tag时都要带上这个端口号很不优雅。亦或着不想在远程主机上开放除了80、443之外的端口，那么可以在远程主机上安装nginx作为反向代理，通过443端口转发到服务器的5000端口上，由于此过程比较简单常见，故具体方法不再赘述。那么在打tag和推送的那一步则相应的变成如下形式：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker tag busybox:latest example.com/busybox:latest
+</span></span><span style="display:flex;"><span>docker push example.com/busybox:latest
+</span></span></code></pre></div><p>那么到这一步，安全的远程仓库已经搭建完毕可以使用了。</p>
+<h3 id="6-lets-encrypt证书-自动续期">6. Let‘s encrypt证书 自动续期</h3>
+<p>由于Let‘s encrypt签发的免费证书只有90天的有效期，因此需要定期更新证书。可以使用以下命令完成证书的更新：</p>
+<pre tabindex="0"><code>certbot renew
+</code></pre><p>如果证书即将到期，则会自动进行更新。为了方便自动续期，可以将该命令添加到cronjob中，事实上当你使用certbot 成功申请证书后，certbot已经自动在系统的cronjob中添加了自动续期指令。我们可以查看/etc/cron.d/certbot文件：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8be9fd;font-style:italic">SHELL</span><span style="color:#ff79c6">=</span>/bin/sh
+</span></span><span style="display:flex;"><span><span style="color:#8be9fd;font-style:italic">PATH</span><span style="color:#ff79c6">=</span>/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#bd93f9">0</span> */12 * * * root <span style="color:#8be9fd;font-style:italic">test</span> -x /usr/bin/certbot -a <span style="color:#f1fa8c">\!</span> -d /run/systemd/system <span style="color:#ff79c6">&amp;&amp;</span> perl
+</span></span><span style="display:flex;"><span>-e <span style="color:#f1fa8c">&#39;sleep int(rand(43200))&#39;</span> <span style="color:#ff79c6">&amp;&amp;</span> certbot -q renew 
+</span></span></code></pre></div><p>但是即使系统可以自动续期，但是证书续期后，/etc/letsencrypt/live/example.com/中的证书文件也会随之改变，但是挂在到registry容器中的证书文件却没发生变化，当3个月证书到期后，registry容器的访问肯定会发生错误，被禁止访问。</p>
+<p>所以，我们需要修改一下这个自动续期的cornjob任务脚本，在续期完成后，同步更新挂载到容器内的证书文件，修改/etc/cron.d/certbot文件如下：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8be9fd;font-style:italic">SHELL</span><span style="color:#ff79c6">=</span>/bin/sh
+</span></span><span style="display:flex;"><span><span style="color:#8be9fd;font-style:italic">PATH</span><span style="color:#ff79c6">=</span>/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#bd93f9">0</span> */12 * * * root <span style="color:#8be9fd;font-style:italic">test</span> -x /usr/bin/certbot -a <span style="color:#f1fa8c">\!</span> -d /run/systemd/system <span style="color:#ff79c6">&amp;&amp;</span> perl
+</span></span><span style="display:flex;"><span>-e <span style="color:#f1fa8c">&#39;sleep int(rand(43200))&#39;</span> <span style="color:#ff79c6">&amp;&amp;</span> certbot -q renew <span style="color:#ff79c6">&amp;&amp;</span>  
+</span></span><span style="display:flex;"><span>cp /etc/letsencrypt/live/example.com/fullchain.pem /home/lell/docker/ssl/domain.crt <span style="color:#ff79c6">&amp;&amp;</span>  
+</span></span><span style="display:flex;"><span>cp /etc/letsencrypt/live/example.com/privkey.pem /home/lell/docker/ssl/domain.key 
+</span></span></code></pre></div>
+
+                
+                
+<div class="entry-shang text-center">
+    
+	    <p>「真诚赞赏，手留余香」</p>
+	
+	<button class="zs show-zs btn btn-bred">赞赏支持</button>
+</div>
+<div class="zs-modal-bg"></div>
+<div class="zs-modal-box">
+	<div class="zs-modal-head">
+		<button type="button" class="close">×</button>
+		<span class="author"><a href="https://lmooml.github.io"><img src="/img/favicon.png" />Lell Blog</a></span>
+        
+	        <p class="tip"><i></i><span>真诚赞赏，手留余香</span></p>
+		
+ 
+	</div>
+	<div class="zs-modal-body">
+		<div class="zs-modal-btns">
+			<button class="btn btn-blink" data-num="2">2元</button>
+			<button class="btn btn-blink" data-num="5">5元</button>
+			<button class="btn btn-blink" data-num="10">10元</button>
+			<button class="btn btn-blink" data-num="50">50元</button>
+			<button class="btn btn-blink" data-num="100">100元</button>
+			<button class="btn btn-blink" data-num="1">任意金额</button>
+		</div>
+		<div class="zs-modal-pay">
+			<button class="btn btn-bred" id="pay-text">2元</button>
+			<p>使用<span id="pay-type">微信</span>扫描二维码完成支付</p>
+			<img src="/img/reward/wechat-2.png"  id="pay-image"/>
+		</div>
+	</div>
+	<div class="zs-modal-footer">
+		<img src="/img/reward/wechat-btn.png"/>
+	</div>
+</div>
+<script type="text/javascript" src="/js/reward.js"></script>
+
+                
+
+                
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/post/docker-registry-1/" data-toggle="tooltip" data-placement="top" title="Docker 搭建私有仓库（一）">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+                
+
+                
+
+
+
+            </div>
+
+            
+            
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+            
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        <a href="/tags/docker" title="docker">
+                            docker
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/registry" title="registry">
+                            registry
+                        </a>
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">                  
+                    
+                    <li>
+                        <a href="mailto:elecsunxin@gmail.com">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fas fa-envelope fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		           
+                    
+                    
+                    
+                    
+
+		            
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/lmooml">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		            
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+            
+            
+            
+           
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="Lell Blog" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fas fa-circle fa-stack-2x"></i>
+                               <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+            
+             </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; Lell Blog 2023
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function loadAsync(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        loadAsync("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    loadAsync("https://cdn.jsdelivr.net/npm/fastclick@1.0.6/lib/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script type="text/javascript">
+    function generateCatalog(selector) {
+
+        
+        
+        
+        
+            _containerSelector = 'div.post-container'
+        
+
+        
+        var P = $(_containerSelector), a, n, t, l, i, c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+
+        
+        $(selector).html('')
+
+        
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#" + $(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="' + i + '" rel="nofollow">' + t + '</a>');
+            l = $('<li class="' + n + '_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;
+    }
+
+    generateCatalog(".catalog-body");
+
+    
+    $(".catalog-toggle").click((function (e) {
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    
+
+
+    loadAsync("\/js\/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+
+
+
+</body>
+</html>

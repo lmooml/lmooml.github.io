@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="Lell Blog">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://lmooml.github.io/img/home-banner.jpg">
+    <meta property="twitter:image" content="https://lmooml.github.io/img/home-banner.jpg" />
+    
+
+    
+    <meta name="title" content="Docker 搭建私有仓库（一）" />
+    <meta property="og:title" content="Docker 搭建私有仓库（一）" />
+    <meta property="twitter:title" content="Docker 搭建私有仓库（一）" />
+    
+
+    
+    <meta name="description" content="Lell，程序员, Gopher，自行车运动爱好者 | 这里是Lell的博客，have fun with code。">
+    <meta property="og:description" content="Lell，程序员, Gopher，自行车运动爱好者 | 这里是Lell的博客，have fun with code。" />
+    <meta property="twitter:description" content="Lell，程序员, Gopher，自行车运动爱好者 | 这里是Lell的博客，have fun with code。" />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="Lell,  Lell的网络日志, Lell的博客, Lell Blog, 博客, 个人网站, 云原生, Kubernetes, 微服务, Microservice">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Docker 搭建私有仓库（一） | Lell的博客 | Lell Blog</title>
+
+    <link rel="canonical" href="/post/docker-registry-1/">
+
+    
+    
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
+
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+
+    
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
+
+    
+    
+
+    
+    <script src="/js/jquery.min.js"></script>
+
+    
+    <script src="/js/bootstrap.min.js"></script>
+
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    <script src="/js/lazysizes.min.js"></script>
+
+    
+    
+
+</head>
+
+
+
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Lell Blog</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">All Posts</a>
+                    </li>
+                    
+                        
+                        <li>
+                            <a href="/categories/docker/">docker</a>
+                        </li>
+                        
+                    
+                    
+		    
+                        <li><a href="/archive//">ARCHIVE</a></li>
+                    
+                        <li><a href="/about//">ABOUT</a></li>
+                    
+		            <li>
+                        <a href="/search"><i class="fa fa-search"></i></a>
+		           </li>
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/img/home-banner.jpg')
+    }
+</style>
+
+<header class="intro-header" >
+
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/docker" title="Docker">
+                            Docker
+                        </a>
+                        
+                        <a class="tag" href="/tags/registry" title="registry">
+                            registry
+                        </a>
+                        
+                    </div>
+                    <h1>Docker 搭建私有仓库（一）</h1>
+                    <h2 class="subheading">Docker 非安全私有仓库搭建方法</h2>
+                    <span class="meta">
+                        
+                            Posted by 
+                            
+                                    Lell Blog
+                             
+                            on 
+                            Thursday, April 6, 2023
+                            
+                            
+                            
+                            
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <p>一般我们构建Docker image 的时候，是从Docker 官方维护的镜像仓库Docker Hub上拉取的镜像。DockerHub 相当于Docker世界的Github, 上面有非常丰富的镜像资源。当然，你也可以在DockerHub上注册帐号，将自己的镜像存储在DockHub上。不过，如果自己或企业开发的程序，并没有开源的打算，只会自己内部使用，那就需要搭建自己的私有仓库，存放这些私有镜像。</p>
+<p>一般来说私有仓库有2种应用场景：</p>
+<ul>
+<li>搭建在局域网内使用，一般用在开发环境。仓库搭建在某台局域网中的服务器上，或是开发机上的虚拟机中，只有在此局域网中的机器才可以访问这个仓库。这种情况下，默认使用环境是安全的，可以使用http协议，也不需要进行用户验证。搭建这种私有仓库相对来说比较简单;</li>
+<li>搭建在云服务器上，任何连接了Internet的机器，都可以访问到这个仓库，一般用在生产环境。这种情况下为了保证安全，必须使用带TLS的通信协议，也最好加上用户验证。</li>
+</ul>
+<p>此篇blog先介绍非安全的私有仓库搭建过程，之后会介绍带TLS的安全仓库搭建过程。</p>
+<h3 id="1-拉取运行registry镜像">1. 拉取、运行registry镜像</h3>
+<p>registry镜像是Docker官方维护的镜像仓库程序。首先我们要从DockerHub上拉取该镜像，并运行。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker pull registry:2    <span style="color:#6272a4">#拉取registry镜像</span>
+</span></span><span style="display:flex;"><span>docker run -d -p 5000:5000 --restart<span style="color:#ff79c6">=</span>always --name registry registry:2  <span style="color:#6272a4">#运行registry</span>
+</span></span></code></pre></div><p>此时registry容器运行起来。由于registry使用5000端口，所以需要将容器内5000端口映射到主机的5000端口上，所以加上了-p 5000:5000 参数。</p>
+<h3 id="2-进行本地仓库的推送拉取测试">2. 进行本地仓库的推送、拉取测试</h3>
+<p>下面演示本机推送镜像到刚刚搭建的registry仓库中：</p>
+<ol>
+<li>从DockerHub拉取nginx:alpine 这个镜像：</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker pull nginx:alpine
+</span></span></code></pre></div><ol>
+<li>给刚刚拉取的镜像打上tag</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker tag nginx:alpine localhost:5000/nginx:alpine
+</span></span></code></pre></div><p>该tag中，localhost:5000/表明了仓库的url地址，在之后的拉取、推送过程中，docker会在这个url地址中寻找registry仓库，如果该仓库存在并正常运行，就会对这个仓库进行相应的操作。也就是说，这个tag指定了仓库地址。而如果没有这个tag指定仓库地址, docker会则会尝试连接DockerHub。</p>
+<ol>
+<li>推送镜像到本地仓库中</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker push localhost:5000/nginx:alpine
+</span></span></code></pre></div><ol>
+<li>删除本地的nginx镜像</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker rmi nginx:alpine
+</span></span><span style="display:flex;"><span>docker rmi localhost:5000/nginx:alpine
+</span></span></code></pre></div><p>此时，本地已经没有了刚才拉取，以及打上tag的nginx镜像了，可以用docker images指令查看是否删除干净</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker images
+</span></span><span style="display:flex;"><span>$ docker images
+</span></span><span style="display:flex;"><span>REPOSITORY                    TAG       IMAGE ID       CREATED        SIZE
+</span></span><span style="display:flex;"><span>registry                      <span style="color:#bd93f9">2</span>         8db46f9d7550   <span style="color:#bd93f9">29</span> hours ago   24.2MB
+</span></span></code></pre></div><p>可以看到本地只有一个registry镜像，已经没有nginx镜像了。</p>
+<ol>
+<li>拉取本地registry仓库中的nginx镜像到本地</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker pull localhost:5000/nginx:alpine
+</span></span><span style="display:flex;"><span>docker images
+</span></span><span style="display:flex;"><span>$ docker images
+</span></span><span style="display:flex;"><span>REPOSITORY                    TAG       IMAGE ID       CREATED        SIZE
+</span></span><span style="display:flex;"><span>registry                      <span style="color:#bd93f9">2</span>         8db46f9d7550   <span style="color:#bd93f9">29</span> hours ago   24.2MB
+</span></span><span style="display:flex;"><span>localhost:5000/nginx          alpine    8e75cbc5b25c   <span style="color:#bd93f9">33</span> hours ago   41MB
+</span></span></code></pre></div><p>可以看到，已经将仓库中的nginx拉取到了本地。</p>
+<h3 id="3-局域网访问registry仓库">3. 局域网访问registry仓库</h3>
+<p>下面测试局域网内的另一台机器访问该registry仓库，以下假设regisitry仓库所在机器的ip地址为：192.168.56.101</p>
+<p>我们试着拉取该仓库内的nginx镜像:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker pull 192.168.56.101:5000/nginx:alpine
+</span></span></code></pre></div><p>结果并不成功，报错了：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>Error response from daemon: Get <span style="color:#f1fa8c">&#34;&lt;https://192.168.56.101:5000/v2/&gt;&#34;</span>: http: server gave HTTP response to HTTPS client
+</span></span></code></pre></div><p>原因是registry默认会使用https协议，也就是使用安全模式。所以非安全模式需要进行一定的设置才行。方法如下：</p>
+<p>在linux环境下，编辑/etc/docker/daemon.json文件，如果没有这个文件，就创建该文件。加入如下设置：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#ff79c6">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f1fa8c">&#34;insecure-registries&#34;</span> : <span style="color:#ff79c6">[</span><span style="color:#f1fa8c">&#34;http://192.168.56.101:5000&#34;</span><span style="color:#ff79c6">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#ff79c6">}</span>
+</span></span></code></pre></div><p>保存文件，重启docker:</p>
+<pre tabindex="0"><code>sudo systemctl restart docker
+</code></pre><p><strong>注意</strong>：</p>
+<ol>
+<li>你需要将192.168.56.101替换为你自己的registry仓库所在机器的ip地址；</li>
+<li>该daemon.json文件，必须要在所有相关机器上创建并且重启docker。即包括registry仓库所在机器，以及客户端访问机器；</li>
+</ol>
+<p>设置完成后，再次测试：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker pull 192.168.56.101:5000/nginx:alpine
+</span></span></code></pre></div><p>结果还是报错：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>Error response from daemon: manifest <span style="color:#ff79c6">for</span> 192.168.56.101:5000/nginx:alpine not found: manifest unknown: manifest unknown
+</span></span></code></pre></div><p>原因仓库中目前保存的nginx 是localhost:5000/nginx:alpine,而不是192.168.56.101:5000/nginx:alpine，相当于没有这个镜像存在。所以我们需要重新给nginx重新tag一下，并推送进仓库。</p>
+<p>回到仓库所在机器，重新tag并推送：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker tag localhost:5000/nginx:alpine 192.168.56.101:5000/nginx:alpine
+</span></span><span style="display:flex;"><span>docker push 192.168.56.101:5000/nginx
+</span></span></code></pre></div><p>再次回到客户机拉取镜像</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker pull 192.168.56.101:5000/nginx:alpine
+</span></span><span style="display:flex;"><span>alpine: Pulling from nginx
+</span></span><span style="display:flex;"><span>f56be85fc22e: Pull <span style="color:#8be9fd;font-style:italic">complete</span> 
+</span></span><span style="display:flex;"><span>2ce963c369bc: Pull <span style="color:#8be9fd;font-style:italic">complete</span> 
+</span></span><span style="display:flex;"><span>59b9d2200e63: Pull <span style="color:#8be9fd;font-style:italic">complete</span> 
+</span></span><span style="display:flex;"><span>3e1e579c95fe: Pull <span style="color:#8be9fd;font-style:italic">complete</span> 
+</span></span><span style="display:flex;"><span>547a97583f72: Pull <span style="color:#8be9fd;font-style:italic">complete</span> 
+</span></span><span style="display:flex;"><span>1f21f983520d: Pull <span style="color:#8be9fd;font-style:italic">complete</span> 
+</span></span><span style="display:flex;"><span>c23b4f8cf279: Pull <span style="color:#8be9fd;font-style:italic">complete</span> 
+</span></span><span style="display:flex;"><span>Digest: sha256:01ccf4035840dd6c25042b2b5f6b09dd265b4ed5aa7b93ccc4714027c0ce5685
+</span></span><span style="display:flex;"><span>Status: Downloaded newer image <span style="color:#ff79c6">for</span> 192.168.56.101:5000/nginx:alpine
+</span></span><span style="display:flex;"><span>192.168.56.101:5000/nginx:alpine
+</span></span></code></pre></div><p>此时拉取成功。这样局域网内的非安全仓库就搭建完毕了。其实也可以用该方法在公网服务器上搭建非安全的仓库，采用http协议进行镜像的拉取和推送。事实上网上也有不少blog文章，教授的是在公网上进行非安全的registry搭建，但我极其不建议这么做。如果仓库建立在公网上，那么最好还是做好安全措施，搭建采用带TLS的registry仓库，下一篇我会介绍怎样搭建安全的registry仓库。</p>
+
+
+                
+                
+<div class="entry-shang text-center">
+    
+	    <p>「真诚赞赏，手留余香」</p>
+	
+	<button class="zs show-zs btn btn-bred">赞赏支持</button>
+</div>
+<div class="zs-modal-bg"></div>
+<div class="zs-modal-box">
+	<div class="zs-modal-head">
+		<button type="button" class="close">×</button>
+		<span class="author"><a href="https://lmooml.github.io"><img src="/img/favicon.png" />Lell Blog</a></span>
+        
+	        <p class="tip"><i></i><span>真诚赞赏，手留余香</span></p>
+		
+ 
+	</div>
+	<div class="zs-modal-body">
+		<div class="zs-modal-btns">
+			<button class="btn btn-blink" data-num="2">2元</button>
+			<button class="btn btn-blink" data-num="5">5元</button>
+			<button class="btn btn-blink" data-num="10">10元</button>
+			<button class="btn btn-blink" data-num="50">50元</button>
+			<button class="btn btn-blink" data-num="100">100元</button>
+			<button class="btn btn-blink" data-num="1">任意金额</button>
+		</div>
+		<div class="zs-modal-pay">
+			<button class="btn btn-bred" id="pay-text">2元</button>
+			<p>使用<span id="pay-type">微信</span>扫描二维码完成支付</p>
+			<img src="/img/reward/wechat-2.png"  id="pay-image"/>
+		</div>
+	</div>
+	<div class="zs-modal-footer">
+		<img src="/img/reward/wechat-btn.png"/>
+	</div>
+</div>
+<script type="text/javascript" src="/js/reward.js"></script>
+
+                
+
+                
+                <hr>
+                <ul class="pager">
+                    
+                    
+                    <li class="next">
+                        <a href="/post/docker-registry-2/" data-toggle="tooltip" data-placement="top" title="Docker 搭建私有仓库（二）">Next
+                            Post &rarr;</a>
+                    </li>
+                    
+                </ul>
+                
+
+                
+
+
+
+            </div>
+
+            
+            
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+            
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        <a href="/tags/docker" title="docker">
+                            docker
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/registry" title="registry">
+                            registry
+                        </a>
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">                  
+                    
+                    <li>
+                        <a href="mailto:elecsunxin@gmail.com">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fas fa-envelope fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		           
+                    
+                    
+                    
+                    
+
+		            
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/lmooml">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		            
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+            
+            
+            
+           
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="Lell Blog" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fas fa-circle fa-stack-2x"></i>
+                               <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+            
+             </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; Lell Blog 2023
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function loadAsync(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        loadAsync("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    loadAsync("https://cdn.jsdelivr.net/npm/fastclick@1.0.6/lib/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script type="text/javascript">
+    function generateCatalog(selector) {
+
+        
+        
+        
+        
+            _containerSelector = 'div.post-container'
+        
+
+        
+        var P = $(_containerSelector), a, n, t, l, i, c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+
+        
+        $(selector).html('')
+
+        
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#" + $(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="' + i + '" rel="nofollow">' + t + '</a>');
+            l = $('<li class="' + n + '_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;
+    }
+
+    generateCatalog(".catalog-body");
+
+    
+    $(".catalog-toggle").click((function (e) {
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    
+
+
+    loadAsync("\/js\/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+
+
+
+</body>
+</html>

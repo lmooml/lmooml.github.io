@@ -6,7 +6,16 @@
     <description>Recent content in registry on Lell Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>cn</language>
-    <lastBuildDate>Mon, 10 Apr 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://lmooml.github.io/tags/registry/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 11 Apr 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://lmooml.github.io/tags/registry/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Docker 搭建私有仓库（三）</title>
+      <link>https://lmooml.github.io/post/docker-registry-3/</link>
+      <pubDate>Tue, 11 Apr 2023 00:00:00 +0000</pubDate>
+      
+      <guid>https://lmooml.github.io/post/docker-registry-3/</guid>
+      <description>搭建了带TLS的registry仓库，解决了数据传输过程中的安全问题。但是在数据访问的源头上并没有什么限制措施，任何人知道了仓库地址，都可以</description>
+    </item>
+    
     <item>
       <title>Docker 搭建私有仓库（二）</title>
       <link>https://lmooml.github.io/post/docker-registry-2/</link>

@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <meta property="og:site_name" content="Lell Blog">
+    <meta property="og:type" content="article">
+
+    
+    <meta property="og:image" content="https://lmooml.github.io/img/home-banner.jpg">
+    <meta property="twitter:image" content="https://lmooml.github.io/img/home-banner.jpg" />
+    
+
+    
+    <meta name="title" content="Docker 搭建私有仓库（三）" />
+    <meta property="og:title" content="Docker 搭建私有仓库（三）" />
+    <meta property="twitter:title" content="Docker 搭建私有仓库（三）" />
+    
+
+    
+    <meta name="description" content="Lell，程序员, Gopher，自行车运动爱好者 | 这里是Lell的博客，have fun with code。">
+    <meta property="og:description" content="Lell，程序员, Gopher，自行车运动爱好者 | 这里是Lell的博客，have fun with code。" />
+    <meta property="twitter:description" content="Lell，程序员, Gopher，自行车运动爱好者 | 这里是Lell的博客，have fun with code。" />
+    
+
+    
+    <meta property="twitter:card" content="summary" />
+    
+    
+
+    <meta name="keyword"  content="Lell,  Lell的网络日志, Lell的博客, Lell Blog, 博客, 个人网站, 云原生, Kubernetes, 微服务, Microservice">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>Docker 搭建私有仓库（三） | Lell的博客 | Lell Blog</title>
+
+    <link rel="canonical" href="/post/docker-registry-3/">
+
+    
+    
+    
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    
+    <link rel="stylesheet" href="/css/hugo-theme-cleanwhite.min.css">
+
+    
+    <link rel="stylesheet" href="/css/zanshang.css">
+
+    
+    <link href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome@5.15.1/css/all.css" rel="stylesheet" type="text/css">
+
+    
+    
+
+    
+    <script src="/js/jquery.min.js"></script>
+
+    
+    <script src="/js/bootstrap.min.js"></script>
+
+    
+    <script src="/js/hux-blog.min.js"></script>
+
+    
+    <script src="/js/lazysizes.min.js"></script>
+
+    
+    
+
+</head>
+
+
+
+
+
+
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+
+    <div class="container-fluid">
+        
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Lell Blog</a>
+        </div>
+
+        
+        
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">All Posts</a>
+                    </li>
+                    
+                        
+                        <li>
+                            <a href="/categories/docker/">docker</a>
+                        </li>
+                        
+                    
+                    
+		    
+                        <li><a href="/archive//">ARCHIVE</a></li>
+                    
+                        <li><a href="/about//">ABOUT</a></li>
+                    
+		            <li>
+                        <a href="/search"><i class="fa fa-search"></i></a>
+		           </li>
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+</nav>
+<script>
+    
+    
+    
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        
+            $navbar.className = " ";
+            
+            setTimeout(function(){
+                
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+
+
+<style type="text/css">
+    header.intro-header {
+        background-image: url('/img/home-banner.jpg')
+    }
+</style>
+
+<header class="intro-header" >
+
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                        <a class="tag" href="/tags/docker" title="Docker">
+                            Docker
+                        </a>
+                        
+                        <a class="tag" href="/tags/registry" title="registry">
+                            registry
+                        </a>
+                        
+                    </div>
+                    <h1>Docker 搭建私有仓库（三）</h1>
+                    <h2 class="subheading">为私有仓库增加用户验证</h2>
+                    <span class="meta">
+                        
+                            Posted by 
+                            
+                                    Lell Blog
+                             
+                            on 
+                            Tuesday, April 11, 2023
+                            
+                            
+                            
+                            
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+
+<article>
+    <div class="container">
+        <div class="row">
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                
+                <p>搭建了带TLS的registry仓库，解决了数据传输过程中的安全问题。但是在数据访问的源头上并没有什么限制措施，任何人知道了仓库地址，都可以去访问。所以，为了进一步提高安全性，我们可以给仓库加上用户验证措施。只有通过用户名及密码成功登录仓库，才有权限进行拉取、推送镜像的操作。</p>
+<h2 id="1-在registry服务器上创建用户名及密码">1. 在registry服务器上创建用户名及密码</h2>
+<p>在前一篇<a href="/post/docker-registry-2">《搭建带TLS的安全仓库》</a>文章中的，我们在registry仓库所在的服务器中有创建过$HOME/docker目录，在这个目录中再创建一个auth目录，并生成一个基于htpasswd的用户名及密码对，保存在auth内的htpasswd文件中。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#8be9fd;font-style:italic">cd</span> docker
+</span></span><span style="display:flex;"><span>mkdir auth
+</span></span><span style="display:flex;"><span>docker run <span style="color:#f1fa8c">\
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c"></span>  --entrypoint htpasswd <span style="color:#f1fa8c">\
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c"></span>  httpd:2 -Bbn testuser testpassword &gt; auth/htpasswd
+</span></span></code></pre></div><p><strong>注意</strong>：需要把testuser替换成你的用户名，把testpassword替换成你的登录密码。</p>
+<h2 id="2-用新指令重启registry容器">2. 用新指令重启registry容器</h2>
+<p>先停止registry容器，再用新的启动指令重新启动registry，将该密码文件挂载到registry容器内。这个过程比较简单，只需要在docker run命令中多加几个选项即可。例如：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker run -d -p 5000:5000 --restart<span style="color:#ff79c6">=</span>always --name registry <span style="color:#f1fa8c">\
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c"></span>  -v /home/lell/docker/registry:/var/lib/registry <span style="color:#f1fa8c">\
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c"></span>  -v /home/lell/docker/ssl:/certs <span style="color:#f1fa8c">\
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c"></span>  -v /home/lell/docker/auth:/auth <span style="color:#f1fa8c">\
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c"></span>  -e <span style="color:#8be9fd;font-style:italic">REGISTRY_AUTH</span><span style="color:#ff79c6">=</span>htpasswd <span style="color:#f1fa8c">\
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c"></span>  -e <span style="color:#8be9fd;font-style:italic">REGISTRY_AUTH_HTPASSWD_REALM</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">&#34;Registry Realm&#34;</span> <span style="color:#f1fa8c">\
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c"></span>  -e <span style="color:#8be9fd;font-style:italic">REGISTRY_AUTH_HTPASSWD_PATH</span><span style="color:#ff79c6">=</span>/auth/htpasswd <span style="color:#f1fa8c">\
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c"></span>  -e <span style="color:#8be9fd;font-style:italic">REGISTRY_HTTP_HOST</span><span style="color:#ff79c6">=</span>https://example.com <span style="color:#f1fa8c">\
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c"></span>  -e <span style="color:#8be9fd;font-style:italic">REGISTRY_HTTP_TLS_CERTIFICATE</span><span style="color:#ff79c6">=</span>/certs/cert.crt <span style="color:#f1fa8c">\
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c"></span>  -e <span style="color:#8be9fd;font-style:italic">REGISTRY_HTTP_TLS_KEY</span><span style="color:#ff79c6">=</span>/certs/privkey.key <span style="color:#f1fa8c">\
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c"></span>  -e <span style="color:#8be9fd;font-style:italic">REGISTRY_STORAGE_DELETE_ENABLED</span><span style="color:#ff79c6">=</span><span style="color:#8be9fd;font-style:italic">true</span> <span style="color:#f1fa8c">\
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c"></span>  registry:2
+</span></span></code></pre></div><p>其中新增的三个-v选项分别为：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>-v /home/lell/docker/auth:/auth   
+</span></span><span style="display:flex;"><span><span style="color:#6272a4"># 将/auth目录挂载到容器内的/auth目录，以便容器内部可以访问到该密码文件；</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>-e <span style="color:#8be9fd;font-style:italic">REGISTRY_AUTH</span><span style="color:#ff79c6">=</span>htpasswd
+</span></span><span style="display:flex;"><span>-e <span style="color:#8be9fd;font-style:italic">REGISTRY_AUTH_HTPASSWD_REALM</span><span style="color:#ff79c6">=</span><span style="color:#f1fa8c">&#34;Registry Realm&#34;</span> <span style="color:#f1fa8c">\
+</span></span></span><span style="display:flex;"><span><span style="color:#f1fa8c"></span><span style="color:#6272a4"># 指定认证方式；</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>-e <span style="color:#8be9fd;font-style:italic">REGISTRY_AUTH_HTPASSWD_PATH</span><span style="color:#ff79c6">=</span>/auth/htpasswd
+</span></span><span style="display:flex;"><span><span style="color:#6272a4"># 指定密码文件的路径。</span>
+</span></span></code></pre></div><p>这样，我们就可以在客户机上使用刚刚创建的用户名和密码访问registry仓库了。例如：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker login example.com   <span style="color:#6272a4">#登录仓库</span>
+</span></span><span style="display:flex;"><span>docker <span style="color:#8be9fd;font-style:italic">logout</span> example.com  <span style="color:#6272a4">#登出仓库</span>
+</span></span></code></pre></div><p>此时，不登录仓库，直接拉取镜像，会报用户验证没有通过的错误，拉取失败：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker pull example.com/busyboy:latest
+</span></span><span style="display:flex;"><span>Error response from daemon: Head <span style="color:#f1fa8c">&#34;https://example.com/v2/busyboy/manifests/latest&#34;</span>: no basic auth credentials
+</span></span></code></pre></div><p>那我们先登录，按提示输入刚刚创建的用户名和密码即可。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker login example.com
+</span></span></code></pre></div><p>结果现实登录成功，但是报出了一个警告：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>WARNING! Your password will be stored unencrypted in /home/lell/.docker/config.json.
+</span></span><span style="display:flex;"><span>Configure a credential helper to remove this warning. See
+</span></span><span style="display:flex;"><span>https://docs.docker.com/engine/reference/commandline/login/#credentials-store
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Login Succeeded
+</span></span></code></pre></div><p>我们先不管这个警告，继续尝试拉取镜像：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker pull example.com/busybox:latest
+</span></span></code></pre></div><p>如果不出意外的话，拉取成功。此时，带用户验证及TLS的registry仓库就搭建完成，可以安全使用了。</p>
+<p>在网上，有很多的教学文章基本上都只介绍到这一步，这个警告几乎没人理会。但是那个警告每次登录时，都会出现，是否碍眼？没有强迫症的程序员不是合格的程序员，那么再进行几步设置，就可以去掉那个警告。</p>
+<p>首先来看下这个警告是什么意思。意思是说，你的登录密码将会以非加密的形式存储在客户机上,需要你配置credential helper 来移除这个警告，具体方法看这个链接指向的文档说明。说白了，还是安全问题，就是要让你的客户机的登录密码以加密方式存储，使整个安全链尽量无死角。</p>
+<h2 id="3-去掉客户机登录警告">3. 去掉客户机登录警告</h2>
+<p>其实，在警告中，docker已经给出了一个链接地址：<a href="https://docs.docker.com/engine/reference/commandline/login/#credentials-store">https://docs.docker.com/engine/reference/commandline/login/#credentials-store</a>，这个链接指向了一个说明文档，用来解决这个警告。这个文档说明虽然比较清楚了，但对于新手来说可能不太友好，因为如果缺少了相关知识，可能看不懂或是根本完成不了这个安全配置。我也是查了不少相关资料，才成功配置成功。下面以ubuntu系统为例做一个说明，MacOs下也相差不多，可以举一反三进行设置。</p>
+<h3 id="第一步在客户机上安装pass工具">第一步，在客户机上安装pass工具：</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo apt install pass
+</span></span></code></pre></div><h3 id="第二步下载安装docker-credential-helpers工具">第二步，下载安装docker-credential-helpers工具:</h3>
+<p>由于我们使用的是pass，所以要使用对应的docker-credential-pass这个工具，打开工具的发布页面 <a href="https://github.com/docker/docker-credential-helpers/releases">https://github.com/docker/docker-credential-helpers/releases</a>，找到对应系统下的docker-credential-pass，我选择的是：<a href="https://github.com/docker/docker-credential-helpers/releases/download/v0.7.0/docker-credential-pass-v0.7.0.linux-amd64">docker-credential-pass-v0.7.0.linux-amd64</a></p>
+<p>下载并安装到$PATH目录下：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>wget https://github.com/docker/docker-credential-helpers/releases/download/v0.7.0/docker-credential-pass-v0.7.0.linux-amd64
+</span></span><span style="display:flex;"><span>mv docker-credential-pass-v0.7.0.linux-amd64 ~/.local/bin/docker-credential-pass
+</span></span><span style="display:flex;"><span><span style="color:#8be9fd;font-style:italic">cd</span> ~/.local/bin
+</span></span><span style="display:flex;"><span>chmod +x docker-credential-pass
+</span></span></code></pre></div><p>解释下安装步骤：由于docker内部会调用名为docker-credential-pass的helper，所以我们需要把刚下载的helper改名为docker-credential-pass，并且放置在$PATH目录下，我选择放在$HOME/.local/bin目录下，你可以根据自己机器的实际情况选择$PATH目录。最后别忘了给程序增加使用权限。</p>
+<p>编辑$HOME/.docker/config.json文件，没有就创建该文件，在文件中加入如下属性：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#ff79c6">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f1fa8c">&#34;credsStore&#34;</span>: <span style="color:#f1fa8c">&#34;pass&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#ff79c6">}</span>
+</span></span></code></pre></div><h3 id="第三步设置pass工具">第三步，设置pass工具:</h3>
+<p>pass是linux下的密码管理工具，具体使用方法可自己google查询。之前我们已经安装好了pass,现在进行使用前的设置。</p>
+<p>首先要初始化密码库，具体指令如下</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>pass init “Password Storage Key”
+</span></span></code></pre></div><p>其中，“Password Storage Key”字符串为密码库的密钥，docker-credential-pass工具的文档指出，这个密钥必须由gpg2生成。</p>
+<p>所以，我们需要先生成gpg2密钥。首先查看你的系统的gpg版本是不是2.0，如果不是需要升级或安装2.0版本以上的gpg程序。我自己的机器是gpg2.2.27版本，足够使用。</p>
+<p>输入如下指令，并在之后按照提示信息输入姓名、email、保护密码，即可生成密钥对</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>gpg --generate-key
+</span></span></code></pre></div><p>最后，初始化pass的密钥库,其中蓝色字串需要填写刚才生成gpg2 key 时输入的email信息</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>pass init <span style="color:#f1fa8c">&#34;the ID of your GPG key&#34;</span>
+</span></span></code></pre></div><p>此时，客户端的密钥设置完成。让我们来重新登录一下远程仓库,输入用户名、密码，显示登录成功，并且没有警告信息了</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>docker login example.com
+</span></span><span style="display:flex;"><span>Username: lell
+</span></span><span style="display:flex;"><span>Password: 
+</span></span><span style="display:flex;"><span>Login Succeeded
+</span></span></code></pre></div><p>至此，用户验证功能配置完毕，打通了安全链的最后一环。我们可以安全的使用私有远程仓库了。</p>
+
+
+                
+                
+<div class="entry-shang text-center">
+    
+	    <p>「真诚赞赏，手留余香」</p>
+	
+	<button class="zs show-zs btn btn-bred">赞赏支持</button>
+</div>
+<div class="zs-modal-bg"></div>
+<div class="zs-modal-box">
+	<div class="zs-modal-head">
+		<button type="button" class="close">×</button>
+		<span class="author"><a href="https://lmooml.github.io"><img src="/img/favicon.png" />Lell Blog</a></span>
+        
+	        <p class="tip"><i></i><span>真诚赞赏，手留余香</span></p>
+		
+ 
+	</div>
+	<div class="zs-modal-body">
+		<div class="zs-modal-btns">
+			<button class="btn btn-blink" data-num="2">2元</button>
+			<button class="btn btn-blink" data-num="5">5元</button>
+			<button class="btn btn-blink" data-num="10">10元</button>
+			<button class="btn btn-blink" data-num="50">50元</button>
+			<button class="btn btn-blink" data-num="100">100元</button>
+			<button class="btn btn-blink" data-num="1">任意金额</button>
+		</div>
+		<div class="zs-modal-pay">
+			<button class="btn btn-bred" id="pay-text">2元</button>
+			<p>使用<span id="pay-type">微信</span>扫描二维码完成支付</p>
+			<img src="/img/reward/wechat-2.png"  id="pay-image"/>
+		</div>
+	</div>
+	<div class="zs-modal-footer">
+		<img src="/img/reward/wechat-btn.png"/>
+	</div>
+</div>
+<script type="text/javascript" src="/js/reward.js"></script>
+
+                
+
+                
+                <hr>
+                <ul class="pager">
+                    
+                    <li class="previous">
+                        <a href="/post/docker-registry-2/" data-toggle="tooltip" data-placement="top" title="Docker 搭建私有仓库（二）">&larr;
+                            Previous Post</a>
+                    </li>
+                    
+                    
+                </ul>
+                
+
+                
+
+
+
+            </div>
+
+            
+            
+            <div class="
+                col-lg-2 col-lg-offset-0
+                visible-lg-block
+                sidebar-container
+                catalog-container">
+                <div class="side-catalog">
+                    <hr class="hidden-sm hidden-xs">
+                    <h5>
+                        <a class="catalog-toggle" href="#">CATALOG</a>
+                    </h5>
+                    <ul class="catalog-body"></ul>
+                </div>
+            </div>
+            
+
+            
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                
+                
+                <section>
+                    <hr class="hidden-sm hidden-xs">
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                        
+                        
+                        <a href="/tags/docker" title="docker">
+                            docker
+                        </a>
+                        
+                        
+                        
+                        <a href="/tags/registry" title="registry">
+                            registry
+                        </a>
+                        
+                        
+                    </div>
+                </section>
+                
+
+                
+                
+            </div>
+        </div>
+    </div>
+</article>
+
+
+
+
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">                  
+                    
+                    <li>
+                        <a href="mailto:elecsunxin@gmail.com">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fas fa-envelope fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		           
+                    
+                    
+                    
+                    
+
+		            
+                    
+                    
+                    <li>
+                        <a target="_blank" href="https://github.com/lmooml">
+                            <span class="fa-stack fa-lg">
+                                <i class="fas fa-circle fa-stack-2x"></i>
+                                <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+		            
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+            
+            
+            
+           
+                   <li>
+                       <a href='' rel="alternate" type="application/rss+xml" title="Lell Blog" >
+                           <span class="fa-stack fa-lg">
+                               <i class="fas fa-circle fa-stack-2x"></i>
+                               <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
+                           </span>
+                       </a>
+                   </li>
+            
+             </ul>
+		<p class="copyright text-muted">
+                    Copyright &copy; Lell Blog 2023
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+
+
+<script>
+    function loadAsync(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+
+
+
+
+
+<script>
+    
+    if($('#tag_cloud').length !== 0){
+        loadAsync("/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+
+<script>
+    loadAsync("https://cdn.jsdelivr.net/npm/fastclick@1.0.6/lib/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+
+
+
+
+<script type="text/javascript">
+    function generateCatalog(selector) {
+
+        
+        
+        
+        
+            _containerSelector = 'div.post-container'
+        
+
+        
+        var P = $(_containerSelector), a, n, t, l, i, c;
+        a = P.find('h1,h2,h3,h4,h5,h6');
+
+        
+        $(selector).html('')
+
+        
+        a.each(function () {
+            n = $(this).prop('tagName').toLowerCase();
+            i = "#" + $(this).prop('id');
+            t = $(this).text();
+            c = $('<a href="' + i + '" rel="nofollow">' + t + '</a>');
+            l = $('<li class="' + n + '_nav"></li>').append(c);
+            $(selector).append(l);
+        });
+        return true;
+    }
+
+    generateCatalog(".catalog-body");
+
+    
+    $(".catalog-toggle").click((function (e) {
+        e.preventDefault();
+        $('.side-catalog').toggleClass("fold")
+    }))
+
+    
+
+
+    loadAsync("\/js\/jquery.nav.js", function () {
+        $('.catalog-body').onePageNav({
+            currentClass: "active",
+            changeHash: !1,
+            easing: "swing",
+            filter: "",
+            scrollSpeed: 700,
+            scrollOffset: 0,
+            scrollThreshold: .2,
+            begin: null,
+            end: null,
+            scrollChange: null,
+            padding: 80
+        });
+    });
+</script>
+
+
+
+
+
+
+</body>
+</html>
